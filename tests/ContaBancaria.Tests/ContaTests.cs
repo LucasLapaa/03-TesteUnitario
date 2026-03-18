@@ -1,133 +1,165 @@
+using System;
 using Xunit;
 using ContaBancaria;
 
-namespace ContaBancaria.Tests;
-
-/// <summary>
-/// Testes unitários para a classe Conta.
-/// 
-/// PARTE 1 — Testes de exemplo (Construtor) já estão prontos.
-///           Observe o padrão AAA e o uso de [Fact] e [Theory].
-///
-/// PARTE 2 — Você deve escrever os testes para os demais métodos
-///           seguindo rigorosamente o ciclo TDD: Red → Green → Refactor.
-///
-/// Para cada método da classe Conta, crie testes que cubram:
-///   ✅ O cenário de sucesso (caminho feliz)
-///   ❌ Cada regra de validação (cenários de exceção)
-///   🔄 Casos de borda (valores limites)
-/// </summary>
-public class ContaTests
+namespace ContaBancaria.Tests
 {
-    // =======================================================
-    //  PARTE 1 — EXEMPLO GUIADO: Testes do Construtor
-    //  Observe o padrão Arrange-Act-Assert (AAA)
-    // =======================================================
-
-    [Fact]
-    public void Construtor_DadosValidos_CriaContaCorretamente()
+    public class ContaTests
     {
-        // Arrange & Act
-        var conta = new Conta("Maria", 100);
+        
+        [Fact]
+        public void CriarConta_Valida()
+        {
+            var conta = new Conta("Lucas", 100m);
 
-        // Assert
-        Assert.Equal("Maria", conta.Titular);
-        Assert.Equal(100, conta.Saldo);
-        Assert.True(conta.Ativa);
+            Assert.Equal("Lucas", conta.Titular);
+            Assert.Equal(100m, conta.Saldo);
+            Assert.True(conta.Ativa);
+        }
+
+        [Fact]
+        public void CriarConta_TitularInvalido()
+        {
+            Assert.Throws<ArgumentException>(() => new Conta("", 100m));
+        }
+
+        [Fact]
+        public void CriarConta_SaldoNegativo()
+        {
+            Assert.Throws<ArgumentException>(() => new Conta("Lucas", -1m));
+        }
+
+        
+        [Fact]
+        public void Depositar_ValorValido()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            conta.Depositar(50m);
+
+            Assert.Equal(150m, conta.Saldo);
+        }
+
+        [Fact]
+        public void Depositar_ValorZero()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            Assert.Throws<ArgumentException>(() => conta.Depositar(0));
+        }
+
+        [Fact]
+        public void Depositar_ContaEncerrada()
+        {
+            var conta = new Conta("Lucas", 0m);
+            conta.Encerrar();
+
+            Assert.Throws<InvalidOperationException>(() => conta.Depositar(10m));
+        }
+
+        
+        [Fact]
+        public void Sacar_ValorValido()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            conta.Sacar(50m);
+
+            Assert.Equal(50m, conta.Saldo);
+        }
+
+        [Fact]
+        public void Sacar_SaldoInsuficiente()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            Assert.Throws<InvalidOperationException>(() => conta.Sacar(200m));
+        }
+
+        [Fact]
+        public void Sacar_ValorInvalido()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            Assert.Throws<ArgumentException>(() => conta.Sacar(0));
+        }
+
+        [Fact]
+        public void Sacar_ContaEncerrada()
+        {
+            var conta = new Conta("Lucas", 0m);
+            conta.Encerrar();
+
+            Assert.Throws<InvalidOperationException>(() => conta.Sacar(10m));
+        }
+
+        
+        [Fact]
+        public void Transferir_Valido()
+        {
+            var origem = new Conta("Lucas", 200m);
+            var destino = new Conta("Maria", 100m);
+
+            origem.Transferir(destino, 50m);
+
+            Assert.Equal(150m, origem.Saldo);
+            Assert.Equal(150m, destino.Saldo);
+        }
+
+        [Fact]
+        public void Transferir_SaldoInsuficiente()
+        {
+            var origem = new Conta("Lucas", 50m);
+            var destino = new Conta("Maria", 100m);
+
+            Assert.Throws<InvalidOperationException>(() => origem.Transferir(destino, 100m));
+        }
+
+        [Fact]
+        public void Transferir_DestinoNulo()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            Assert.Throws<ArgumentNullException>(() => conta.Transferir(null, 10m));
+        }
+
+        [Fact]
+        public void Transferir_ContaEncerrada()
+        {
+            var origem = new Conta("Lucas", 100m);
+            var destino = new Conta("Maria", 100m);
+
+            origem.Encerrar();
+
+            Assert.Throws<InvalidOperationException>(() => origem.Transferir(destino, 10m));
+        }
+
+        
+        [Fact]
+        public void Encerrar_ComSaldo()
+        {
+            var conta = new Conta("Lucas", 100m);
+
+            Assert.Throws<InvalidOperationException>(() => conta.Encerrar());
+        }
+
+        [Fact]
+        public void Encerrar_SemSaldo()
+        {
+            var conta = new Conta("Lucas", 0m);
+
+            conta.Encerrar();
+
+            Assert.False(conta.Ativa);
+        }
+
+        [Fact]
+        public void Encerrar_JaEncerrada()
+        {
+            var conta = new Conta("Lucas", 0m);
+            conta.Encerrar();
+
+            Assert.Throws<InvalidOperationException>(() => conta.Encerrar());
+        }
     }
-
-    [Fact]
-    public void Construtor_SemSaldoInicial_CriaContaComSaldoZero()
-    {
-        // Arrange & Act
-        var conta = new Conta("João");
-
-        // Assert
-        Assert.Equal("João", conta.Titular);
-        Assert.Equal(0, conta.Saldo);
-        Assert.True(conta.Ativa);
-    }
-
-    [Fact]
-    public void Construtor_TitularNulo_LancaArgumentException()
-    {
-        // Assert — verifica que a exceção é lançada
-        Assert.Throws<ArgumentException>(() => new Conta(null!));
-    }
-
-    [Fact]
-    public void Construtor_TitularVazio_LancaArgumentException()
-    {
-        Assert.Throws<ArgumentException>(() => new Conta(""));
-    }
-
-    [Fact]
-    public void Construtor_SaldoNegativo_LancaArgumentException()
-    {
-        Assert.Throws<ArgumentException>(() => new Conta("Maria", -50));
-    }
-
-    [Theory]
-    [InlineData("Ana", 0)]
-    [InlineData("Carlos", 1000)]
-    [InlineData("Beatriz", 0.01)]
-    public void Construtor_VariosValoresValidos_CriaContaCorretamente(string titular, decimal saldo)
-    {
-        // Act
-        var conta = new Conta(titular, saldo);
-
-        // Assert
-        Assert.Equal(titular, conta.Titular);
-        Assert.Equal(saldo, conta.Saldo);
-        Assert.True(conta.Ativa);
-    }
-
-    // =======================================================
-    //  PARTE 2 — ESCREVA OS TESTES ABAIXO (TDD)
-    //  Lembre-se: escreva o teste PRIMEIRO, veja FALHAR (Red),
-    //  depois implemente o código para PASSAR (Green),
-    //  e por fim faça Refactor se necessário.
-    // =======================================================
-
-    // =======================================================
-    //  Testes para Depositar
-    //  Sugestão de testes:
-    //    - Depósito com valor válido atualiza o saldo
-    //    - Depósito com valor zero lança ArgumentException
-    //    - Depósito com valor negativo lança ArgumentException
-    //    - Depósito em conta inativa lança InvalidOperationException
-    // =======================================================
-
-
-    // =======================================================
-    //  Testes para Sacar
-    //  Sugestão de testes:
-    //    - Saque com valor válido atualiza o saldo
-    //    - Saque com valor maior que saldo lança InvalidOperationException
-    //    - Saque com valor zero lança ArgumentException
-    //    - Saque com valor negativo lança ArgumentException
-    //    - Saque em conta inativa lança InvalidOperationException
-    // =======================================================
-
-
-    // =======================================================
-    //  Testes para Transferir
-    //  Sugestão de testes:
-    //    - Transferência válida atualiza saldo de ambas as contas
-    //    - Transferência com saldo insuficiente lança exceção
-    //    - Transferência com valor zero/negativo lança exceção
-    //    - Transferência com conta origem inativa lança exceção
-    //    - Transferência com conta destino inativa lança exceção
-    // =======================================================
-
-
-    // =======================================================
-    //  Testes para Encerrar
-    //  Sugestão de testes:
-    //    - Encerrar conta com saldo zero funciona
-    //    - Encerrar conta com saldo lança InvalidOperationException
-    //    - Encerrar conta já inativa lança InvalidOperationException
-    //    - Conta encerrada tem Ativa == false
-    // =======================================================
-
 }
